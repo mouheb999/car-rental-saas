@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Bell, Car as CarIcon } from "lucide-react";
+import { useState } from "react";
+import {
+  LayoutDashboard,
+  Bell,
+  Car as CarIcon,
+  LogOut,
+  Loader2,
+} from "lucide-react";
 import Logo from "@/components/ui/Logo";
+import { adminApi } from "@/lib/adminApi";
 
 const navLinks = [
   { href: "/admin/dashboard", label: "Réservations", Icon: LayoutDashboard },
@@ -12,6 +20,18 @@ const navLinks = [
 
 export default function AdminTopBar() {
   const pathname = usePathname();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await adminApi.logout();
+    } catch {
+      // Ignore errors: even if the request fails, the cookie will still
+      // expire server-side; force the redirect anyway.
+    }
+    window.location.href = "/admin/login";
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-navy-950/90 backdrop-blur-xl border-b border-white/5">
@@ -56,15 +76,28 @@ export default function AdminTopBar() {
           >
             <Bell size={15} />
           </button>
-          <div className="flex items-center gap-2.5">
+          <div className="hidden md:flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-white text-xs font-bold">
               AG
             </div>
-            <div className="hidden md:block leading-tight">
+            <div className="leading-tight">
               <p className="text-xs font-medium text-cream">Admin</p>
               <p className="text-[10px] text-cream/40">ALIA GO</p>
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-red-500/15 border border-white/10 hover:border-red-500/30 text-cream/70 hover:text-red-400 text-xs font-medium transition-colors disabled:opacity-50"
+            title="Se déconnecter"
+          >
+            {loggingOut ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <LogOut size={13} />
+            )}
+            <span className="hidden sm:inline">Déconnexion</span>
+          </button>
         </div>
       </div>
 

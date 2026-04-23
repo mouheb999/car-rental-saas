@@ -23,12 +23,12 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import Toast, { ToastTone } from "@/components/admin/Toast";
 import CarEditModal from "@/components/admin/CarEditModal";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import { useCars } from "@/lib/useCars";
-import { insertCar, updateCar, deleteCar } from "@/lib/carsDb";
+import { useAdminCars } from "@/lib/useAdminCars";
+import { adminApi } from "@/lib/adminApi";
 import { fromCarRow, toCarInsert, type AdminCar } from "@/lib/adminTypes";
 
 export default function AdminCarsPage() {
-  const { cars: rows, loading, error, refetch } = useCars();
+  const { cars: rows, loading, error, refetch } = useAdminCars();
   const cars = useMemo(() => rows.map(fromCarRow), [rows]);
 
   const [query, setQuery] = useState("");
@@ -64,10 +64,10 @@ export default function AdminCarsPage() {
     try {
       const insertPayload = toCarInsert(payload);
       if (modalMode === "create") {
-        await insertCar(insertPayload);
+        await adminApi.createCar(insertPayload);
         showToast("Voiture ajoutée", "success");
       } else {
-        await updateCar(payload.id, insertPayload);
+        await adminApi.updateCar(payload.id, insertPayload);
         showToast("Voiture mise à jour", "success");
       }
       setModalOpen(false);
@@ -84,7 +84,7 @@ export default function AdminCarsPage() {
   const toggleAvailability = async (car: AdminCar) => {
     setBusyId(car.id);
     try {
-      await updateCar(car.id, { available: !car.available });
+      await adminApi.updateCar(car.id, { available: !car.available });
       showToast("Disponibilité mise à jour", "success");
     } catch (e) {
       showToast(
@@ -99,7 +99,7 @@ export default function AdminCarsPage() {
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     try {
-      await deleteCar(pendingDelete.id);
+      await adminApi.deleteCar(pendingDelete.id);
       showToast("Voiture supprimée", "error");
     } catch (e) {
       showToast(
@@ -148,7 +148,7 @@ export default function AdminCarsPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <span className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
               <Wifi size={12} />
-              Temps réel
+              Sync auto 8 s
             </span>
             <div className="bg-navy-900 border border-white/5 rounded-2xl px-4 py-2.5 min-w-[100px]">
               <p className="text-[10px] uppercase tracking-[0.2em] text-cream/40 font-medium">

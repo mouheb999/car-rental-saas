@@ -16,7 +16,7 @@ import AdminTopBar from "@/components/admin/AdminTopBar";
 import ReservationRow from "@/components/admin/ReservationRow";
 import ReservationCard from "@/components/admin/ReservationCard";
 import Toast, { ToastTone } from "@/components/admin/Toast";
-import { useReservations } from "@/lib/useReservations";
+import { useAdminReservations } from "@/lib/useAdminReservations";
 import type { ReservationStatus } from "@/lib/database.types";
 
 type FilterKey = "all" | ReservationStatus;
@@ -29,7 +29,7 @@ export default function AdminDashboardPage() {
     refetch,
     confirm,
     cancel,
-  } = useReservations();
+  } = useAdminReservations();
 
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <span className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
               <Wifi size={12} />
-              Temps réel
+              Sync auto 5 s
             </span>
             <button
               onClick={refetch}
