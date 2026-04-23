@@ -28,13 +28,17 @@ export async function POST(req: Request) {
     );
   }
 
+  // Only set Secure flag when served over HTTPS (not plain http://localhost)
+  const origin = req.headers.get("origin") ?? req.headers.get("referer") ?? "";
+  const isHttps = origin.startsWith("https://");
+
   const res = NextResponse.json({ ok: true });
   res.cookies.set({
     name: ADMIN_COOKIE,
     value: expected,
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     path: "/",
     // 8 hours
     maxAge: 60 * 60 * 8,

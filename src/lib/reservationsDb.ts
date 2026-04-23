@@ -8,7 +8,7 @@ import type {
 } from "./database.types";
 
 export type ReservationWithCar = ReservationRow & {
-  cars: Pick<CarRow, "id" | "name" | "image"> | null;
+  cars: Pick<CarRow, "id" | "name" | "image" | "price"> | null;
 };
 
 export async function fetchReservations(): Promise<ReservationWithCar[]> {
@@ -27,17 +27,19 @@ export async function createReservation(payload: {
   start_date: string;
   end_date: string;
   pickup_location?: string | null;
-}): Promise<ReservationRow> {
-  const { data, error } = await supabase
+}): Promise<{ id: string }> {
+  // Generate the id client-side so we can return it without needing
+  // read access to the `reservations` table (blocked by RLS for anon).
+  const id = crypto.randomUUID();
+  const { error } = await supabase
     .from("reservations")
     .insert({
+      id,
       ...payload,
       status: "pending",
-    })
-    .select("*")
-    .single();
+    });
   if (error) throw error;
-  return data;
+  return { id };
 }
 
 export async function updateReservationStatus(

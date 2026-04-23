@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_STATUS = ["pending", "confirmed", "cancelled"] as const;
+const ALLOWED_STATUS = ["pending", "contacted", "confirmed", "cancelled"] as const;
 type AllowedStatus = (typeof ALLOWED_STATUS)[number];
 
 /**
@@ -34,7 +34,7 @@ export async function PATCH(
     .from("reservations")
     .update({ status })
     .eq("id", params.id)
-    .select("*, cars(id, name, image)")
+    .select("*, cars(id, name, image, price)")
     .single();
 
   if (error) {

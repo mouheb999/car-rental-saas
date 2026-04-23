@@ -24,5 +24,12 @@ export const supabaseAdmin = createClient(
   serviceRole ?? "invalid",
   {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      // Next.js patches global fetch to add aggressive caching.
+      // Force every Supabase request to bypass that cache so admin
+      // reads always return the latest data from PostgreSQL.
+      fetch: (input, init) =>
+        fetch(input, { ...init, cache: "no-store" }),
+    },
   }
 );

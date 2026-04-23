@@ -408,9 +408,8 @@ function BookingInner() {
                       Demande envoyée !
                     </h2>
                     <p className="text-cream/50 mb-8 max-w-md mx-auto">
-                      Votre réservation a bien été enregistrée. Notre équipe
-                      vous contactera sur WhatsApp ou par téléphone pour la
-                      confirmer sous peu.
+                      Votre demande a été envoyée. Nous vous contacterons
+                      rapidement.
                     </p>
 
                     <div className="bg-navy-850 border border-white/5 rounded-xl p-6 max-w-sm mx-auto text-left space-y-3 mb-8">
@@ -513,7 +512,7 @@ function BookingInner() {
                       </>
                     ) : (
                       <>
-                        Confirmer la réservation
+                        Envoyer la demande
                         <ArrowRight size={14} />
                       </>
                     )}

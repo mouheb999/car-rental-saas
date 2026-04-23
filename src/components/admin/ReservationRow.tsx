@@ -9,6 +9,7 @@ import type { ReservationWithCar } from "@/lib/reservationsDb";
 interface ReservationRowProps {
   reservation: ReservationWithCar;
   index: number;
+  onContact: (id: string) => void;
   onConfirm: (id: string) => void;
   onCancel: (id: string) => void;
 }
@@ -27,6 +28,7 @@ function formatDateRange(start: string, end: string) {
 export default function ReservationRow({
   reservation,
   index,
+  onContact,
   onConfirm,
   onCancel,
 }: ReservationRowProps) {
@@ -75,6 +77,7 @@ export default function ReservationRow({
         <ActionButtons
           phone={phone}
           status={status}
+          onContact={() => onContact(id)}
           onConfirm={() => onConfirm(id)}
           onCancel={() => onCancel(id)}
         />

@@ -300,7 +300,7 @@ export default function CarEditModal({
                   ))}
                   {form.gallery.length === 0 && (
                     <p className="text-[11px] text-cream/30 italic py-4">
-                      Aucune image en galerie (l'image principale sera utilisée).
+                      Aucune image en galerie (l&apos;image principale sera utilisée).
                     </p>
                   )}
                 </div>

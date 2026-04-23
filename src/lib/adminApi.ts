@@ -52,7 +52,7 @@ export const adminApi = {
 
   updateReservationStatus: (
     id: string,
-    status: "pending" | "confirmed" | "cancelled"
+    status: "pending" | "contacted" | "confirmed" | "cancelled"
   ) =>
     adminFetch<{ reservation: ReservationWithCar }>(
       `/api/admin/reservations/${id}`,

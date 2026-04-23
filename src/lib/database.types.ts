@@ -1,7 +1,7 @@
 // Minimal hand-written Database types matching our SQL schema.
 // Keep in sync with supabase.schema.sql.
 
-export type ReservationStatus = "pending" | "confirmed" | "cancelled";
+export type ReservationStatus = "pending" | "contacted" | "confirmed" | "cancelled";
 
 export interface CarRow {
   id: string;

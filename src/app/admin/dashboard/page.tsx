@@ -5,12 +5,16 @@ import { motion } from "framer-motion";
 import {
   ClipboardList,
   Clock,
+  PhoneCall,
   CheckCircle2,
   XCircle,
   Search,
   Loader2,
   RefreshCw,
   Wifi,
+  DollarSign,
+  CalendarCheck,
+  TrendingUp,
 } from "lucide-react";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import ReservationRow from "@/components/admin/ReservationRow";
@@ -21,12 +25,19 @@ import type { ReservationStatus } from "@/lib/database.types";
 
 type FilterKey = "all" | ReservationStatus;
 
+function daysBetween(start: string, end: string): number {
+  const a = new Date(start + "T00:00:00").getTime();
+  const b = new Date(end + "T00:00:00").getTime();
+  return Math.max(Math.round((b - a) / 86_400_000), 0);
+}
+
 export default function AdminDashboardPage() {
   const {
     reservations,
     loading,
     error,
     refetch,
+    contact,
     confirm,
     cancel,
   } = useAdminReservations();
@@ -43,10 +54,22 @@ export default function AdminDashboardPage() {
     setTimeout(() => setToast({ message: null, tone }), 2600);
   };
 
+  const handleContact = async (id: string) => {
+    try {
+      await contact(id);
+      showToast("Client contacté", "success");
+    } catch (e) {
+      showToast(
+        e instanceof Error ? e.message : "Erreur lors du contact",
+        "error"
+      );
+    }
+  };
+
   const handleConfirm = async (id: string) => {
     try {
       await confirm(id);
-      showToast("Réservation confirmée avec succès", "success");
+      showToast("Réservation confirmée", "success");
     } catch (e) {
       showToast(
         e instanceof Error ? e.message : "Erreur lors de la confirmation",
@@ -58,10 +81,10 @@ export default function AdminDashboardPage() {
   const handleCancel = async (id: string) => {
     try {
       await cancel(id);
-      showToast("Réservation annulée", "error");
+      showToast("Réservation refusée", "error");
     } catch (e) {
       showToast(
-        e instanceof Error ? e.message : "Erreur lors de l'annulation",
+        e instanceof Error ? e.message : "Erreur lors du refus",
         "error"
       );
     }
@@ -70,13 +93,39 @@ export default function AdminDashboardPage() {
   const stats = useMemo(() => {
     const total = reservations.length;
     const pending = reservations.filter((r) => r.status === "pending").length;
+    const contacted = reservations.filter((r) => r.status === "contacted").length;
     const confirmed = reservations.filter(
       (r) => r.status === "confirmed"
     ).length;
     const cancelled = reservations.filter(
       (r) => r.status === "cancelled"
     ).length;
-    return { total, pending, confirmed, cancelled };
+    return { total, pending, contacted, confirmed, cancelled };
+  }, [reservations]);
+
+  // Revenue calculation — only confirmed reservations
+  const revenue = useMemo(() => {
+    const confirmedRes = reservations.filter((r) => r.status === "confirmed");
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    let totalRevenue = 0;
+    let monthlyRevenue = 0;
+
+    for (const r of confirmedRes) {
+      const days = daysBetween(r.start_date, r.end_date);
+      const pricePerDay = r.cars?.price ?? 0;
+      const amount = pricePerDay * days;
+      totalRevenue += amount;
+
+      const createdAt = new Date(r.created_at);
+      if (createdAt.getMonth() === thisMonth && createdAt.getFullYear() === thisYear) {
+        monthlyRevenue += amount;
+      }
+    }
+
+    return { totalRevenue, monthlyRevenue, confirmedCount: confirmedRes.length };
   }, [reservations]);
 
   const filtered = useMemo(() => {
@@ -96,8 +145,9 @@ export default function AdminDashboardPage() {
   const filters: { key: FilterKey; label: string; count: number }[] = [
     { key: "all", label: "Toutes", count: stats.total },
     { key: "pending", label: "En attente", count: stats.pending },
+    { key: "contacted", label: "Contactés", count: stats.contacted },
     { key: "confirmed", label: "Confirmées", count: stats.confirmed },
-    { key: "cancelled", label: "Annulées", count: stats.cancelled },
+    { key: "cancelled", label: "Refusées", count: stats.cancelled },
   ];
 
   const statCards = [
@@ -114,16 +164,43 @@ export default function AdminDashboardPage() {
       tint: "text-yellow-400 bg-yellow-500/10 border-yellow-500/30",
     },
     {
+      label: "Contactés",
+      value: stats.contacted,
+      Icon: PhoneCall,
+      tint: "text-blue-400 bg-blue-500/10 border-blue-500/30",
+    },
+    {
       label: "Confirmées",
       value: stats.confirmed,
       Icon: CheckCircle2,
       tint: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
     },
     {
-      label: "Annulées",
+      label: "Refusées",
       value: stats.cancelled,
       Icon: XCircle,
       tint: "text-red-400 bg-red-500/10 border-red-500/30",
+    },
+  ];
+
+  const revenueCards = [
+    {
+      label: "Total revenus",
+      value: `${revenue.totalRevenue.toLocaleString("fr-FR")} TND`,
+      Icon: DollarSign,
+      tint: "text-accent bg-accent/10 border-accent/30",
+    },
+    {
+      label: "Revenus ce mois",
+      value: `${revenue.monthlyRevenue.toLocaleString("fr-FR")} TND`,
+      Icon: TrendingUp,
+      tint: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+    },
+    {
+      label: "Réservations confirmées",
+      value: revenue.confirmedCount,
+      Icon: CalendarCheck,
+      tint: "text-blue-400 bg-blue-500/10 border-blue-500/30",
     },
   ];
 
@@ -169,8 +246,45 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Revenue section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
+          className="mb-10"
+        >
+          <h2 className="text-sm uppercase tracking-[0.2em] text-cream/40 font-semibold mb-4">
+            Revenus
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {revenueCards.map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * i + 0.15, duration: 0.4 }}
+                className="bg-navy-900 border border-white/5 rounded-2xl p-5 hover:border-accent/20 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs uppercase tracking-[0.2em] text-cream/40 font-medium">
+                    {s.label}
+                  </p>
+                  <div
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center ${s.tint}`}
+                  >
+                    <s.Icon size={16} />
+                  </div>
+                </div>
+                <p className="text-2xl md:text-3xl font-display font-bold text-cream">
+                  {s.value}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
           {statCards.map((s, i) => (
             <motion.div
               key={s.label}
@@ -276,6 +390,7 @@ export default function AdminDashboardPage() {
                       key={r.id}
                       reservation={r}
                       index={i}
+                      onContact={handleContact}
                       onConfirm={handleConfirm}
                       onCancel={handleCancel}
                     />
@@ -305,6 +420,7 @@ export default function AdminDashboardPage() {
                   key={r.id}
                   reservation={r}
                   index={i}
+                  onContact={handleContact}
                   onConfirm={handleConfirm}
                   onCancel={handleCancel}
                 />

@@ -11,6 +11,9 @@ import type { ReservationStatus } from "./database.types";
  * Realtime can't work here because anon clients are blocked by RLS
  * from reading the reservations table. Instead we poll every 5s — more
  * than fast enough for a booking admin and dead simple.
+ *
+ * A `patchInFlight` ref prevents polling from overwriting optimistic
+ * updates while a PATCH request is in-flight.
  */
 const POLL_MS = 5000;
 
@@ -19,6 +22,7 @@ interface UseAdminReservationsResult {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  contact: (id: string) => Promise<void>;
   confirm: (id: string) => Promise<void>;
   cancel: (id: string) => Promise<void>;
 }
@@ -28,11 +32,15 @@ export function useAdminReservations(): UseAdminReservationsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
+  const patchInFlight = useRef(false);
 
   const load = useCallback(async () => {
+    // Skip polling while a PATCH is in-flight to avoid overwriting
+    // the optimistic update with stale server data.
+    if (patchInFlight.current) return;
     try {
       const rows = await adminApi.listReservations();
-      if (!mounted.current) return;
+      if (!mounted.current || patchInFlight.current) return;
       setReservations(rows);
       setError(null);
     } catch (e) {
@@ -55,14 +63,23 @@ export function useAdminReservations(): UseAdminReservationsResult {
 
   const patch = useCallback(
     async (id: string, status: ReservationStatus) => {
-      // Optimistic update
+      // Block polling while the write is in-flight so the optimistic
+      // update isn't overwritten by stale server data.
+      patchInFlight.current = true;
+
+      // Optimistic update — UI reflects the change immediately
       setReservations((prev) =>
         prev.map((r) => (r.id === id ? { ...r, status } : r))
       );
+
       try {
         await adminApi.updateReservationStatus(id, status);
+        // PATCH succeeded. Resume polling — next cycle will sync
+        // canonical state from the server automatically.
+        patchInFlight.current = false;
       } catch (e) {
-        // Revert on failure
+        // On failure, resume polling and refetch the real state
+        patchInFlight.current = false;
         await load();
         throw e;
       }
@@ -75,6 +92,7 @@ export function useAdminReservations(): UseAdminReservationsResult {
     loading,
     error,
     refetch: load,
+    contact: (id) => patch(id, "contacted"),
     confirm: (id) => patch(id, "confirmed"),
     cancel: (id) => patch(id, "cancelled"),
   };

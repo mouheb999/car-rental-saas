@@ -307,7 +307,7 @@ function CarDetailInner() {
                       : "bg-white/5 text-cream/40 cursor-not-allowed"
                   }`}
                 >
-                  {car.available ? "Réserver maintenant" : "Indisponible"}
+                  {car.available ? "Envoyer la demande" : "Indisponible"}
                   {car.available && <ArrowRight size={16} />}
                 </motion.button>
 

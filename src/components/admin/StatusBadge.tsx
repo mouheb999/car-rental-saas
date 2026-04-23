@@ -1,17 +1,23 @@
-import { Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Clock, PhoneCall, CheckCircle2, XCircle } from "lucide-react";
+import type { ReservationStatus } from "@/lib/database.types";
 
-export type ReservationStatus = "pending" | "confirmed" | "cancelled";
+export type { ReservationStatus };
 
 interface StatusBadgeProps {
   status: ReservationStatus;
   size?: "sm" | "md";
 }
 
-const STATUS_MAP = {
+const STATUS_MAP: Record<ReservationStatus, { label: string; cls: string; Icon: typeof Clock }> = {
   pending: {
     label: "En attente",
     cls: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
     Icon: Clock,
+  },
+  contacted: {
+    label: "Contacté",
+    cls: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+    Icon: PhoneCall,
   },
   confirmed: {
     label: "Confirmée",

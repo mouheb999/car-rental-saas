@@ -9,6 +9,7 @@ import type { ReservationWithCar } from "@/lib/reservationsDb";
 interface ReservationCardProps {
   reservation: ReservationWithCar;
   index: number;
+  onContact: (id: string) => void;
   onConfirm: (id: string) => void;
   onCancel: (id: string) => void;
 }
@@ -27,6 +28,7 @@ function formatDateRange(start: string, end: string) {
 export default function ReservationCard({
   reservation,
   index,
+  onContact,
   onConfirm,
   onCancel,
 }: ReservationCardProps) {
@@ -81,6 +83,7 @@ export default function ReservationCard({
         <ActionButtons
           phone={phone}
           status={status}
+          onContact={() => onContact(id)}
           onConfirm={() => onConfirm(id)}
           onCancel={() => onCancel(id)}
           compact

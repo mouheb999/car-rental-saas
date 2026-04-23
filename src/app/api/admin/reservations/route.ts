@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("reservations")
-    .select("*, cars(id, name, image)")
+    .select("*, cars(id, name, image, price)")
     .order("created_at", { ascending: false });
 
   if (error) {

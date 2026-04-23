@@ -1,21 +1,23 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Info } from "lucide-react";
 
-export type ToastTone = "success" | "error";
+export type ToastTone = "success" | "error" | "info";
 
 interface ToastProps {
   message: string | null;
   tone: ToastTone;
 }
 
+const TONE_MAP = {
+  success: { Icon: CheckCircle2, cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  error: { Icon: XCircle, cls: "bg-red-500/15 text-red-400 border-red-500/30" },
+  info: { Icon: Info, cls: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+};
+
 export default function Toast({ message, tone }: ToastProps) {
-  const Icon = tone === "success" ? CheckCircle2 : XCircle;
-  const cls =
-    tone === "success"
-      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-      : "bg-red-500/15 text-red-400 border-red-500/30";
+  const { Icon, cls } = TONE_MAP[tone];
 
   return (
     <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
