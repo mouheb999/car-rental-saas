@@ -51,9 +51,22 @@ create index if not exists reservations_dates_idx    on public.reservations(star
 
 -- ----------------------------------------------------------------
 -- REALTIME — make sure the tables broadcast changes
+-- Wrapped in DO blocks so re-running the script doesn't fail with
+-- "relation is already member of publication".
 -- ----------------------------------------------------------------
-alter publication supabase_realtime add table public.reservations;
-alter publication supabase_realtime add table public.cars;
+do $$
+begin
+  alter publication supabase_realtime add table public.reservations;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.cars;
+exception
+  when duplicate_object then null;
+end $$;
 
 -- ----------------------------------------------------------------
 -- RLS — SECURE POLICIES
