@@ -55,22 +55,37 @@ export async function updateReservationStatus(
 }
 
 /**
- * Returns any confirmed/pending reservations for this car that overlap the
- * requested range. Overlap: new_start <= existing_end AND new_end >= existing_start.
- * Cancelled reservations are ignored.
+ * Checks whether the car is free on the given date range.
+ *
+ * Uses the SECURITY DEFINER RPC `is_car_available` instead of a direct
+ * `select` on `reservations` — so the anon client never needs read access
+ * to customer PII. The function runs server-side in Postgres and only
+ * returns a single boolean.
+ */
+export async function isCarAvailable(
+  carId: string,
+  startDate: string,
+  endDate: string
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("is_car_available", {
+    p_car_id: carId,
+    p_start: startDate,
+    p_end: endDate,
+  });
+  if (error) throw error;
+  return Boolean(data);
+}
+
+/**
+ * Kept for backwards compatibility with the booking page. Now piggybacks
+ * on `isCarAvailable` and just returns an empty array if free or a single
+ * marker element if not. The caller only checks `.length > 0`.
  */
 export async function findOverlappingReservations(
   carId: string,
   startDate: string,
   endDate: string
-): Promise<ReservationRow[]> {
-  const { data, error } = await supabase
-    .from("reservations")
-    .select("*")
-    .eq("car_id", carId)
-    .in("status", ["pending", "confirmed"])
-    .lte("start_date", endDate) // existing_start <= new_end
-    .gte("end_date", startDate); // existing_end >= new_start
-  if (error) throw error;
-  return data ?? [];
+): Promise<Array<{ id: string }>> {
+  const available = await isCarAvailable(carId, startDate, endDate);
+  return available ? [] : [{ id: "overlap" }];
 }
